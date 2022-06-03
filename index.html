@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <script src="https://cdn.tailwindcss.com"></script>
+ 
 
 </head>
 <body class="w-4/5 mx-auto my-10">
@@ -20,24 +21,59 @@
 
     <div class="flex items-center mt-10 align-center justify-center">
         <div class=" pr-5"><b>Nøgle:</b></div>
-        <input class="w-full" type="text" value="a5f6ba42255643907a5bb3709840ca5b"/>
+        <input id="key" class="w-full" type="text" value="a5f6ba42255643907a5bb3709840ca5b"/>
     </div>
 
-    <p class="mt-10"><i>Kryptering:</i></p>
+    <p class="mt-10"><i>Kryptering:</i><span class="text-sm ml-2 text-gray-300" id="encryptLoader"></span></p>
     <div class=" flex">
-        <div class="basis-1/2 "><textarea class="w-full h-32 p-5 bg-gray-50 resize-none" placeholder="Skriv din tekst her"></textarea></div>
-        <div class="basis-1/2"><textarea class="w-full h-32 p-5 bg-gray-100 resize-none" placeholder="Din krypteret tekst kommer her" disabled></textarea></div>
+        <div class="basis-1/2 "><textarea id="encryptTextfieldInput" class="w-full outline-0 h-32 p-5 bg-gray-50 resize-none" placeholder="Skriv din tekst her"></textarea></div>
+        <div class="basis-1/2"><textarea id="ecryptTextfieldOutput" class="w-full h-32 p-5 bg-gray-100 resize-none" placeholder="Din krypteret tekst kommer her" disabled></textarea></div>
     </div>
 
-    <p class="mt-10"><i>Dekryptering:</i></p>
+    <p class="mt-10"><i>Dekryptering:</i><span class="text-sm ml-2 text-gray-300" id="decryptLoader"></span></p>
     <div class=" flex">
-        <div class="basis-1/2 "><textarea class="w-full h-32 p-5 bg-gray-50 resize-none" placeholder="Skriv din krypteret tekst her"></textarea></div>
-        <div class="basis-1/2"><textarea class="w-full h-32 p-5 bg-gray-100 resize-none" placeholder="Din tekst kommer her" disabled></textarea></div>
+        <div class="basis-1/2 "><textarea id="decryptTextfieldInput" class="w-full outline-0 h-32 p-5 bg-gray-50 resize-none" placeholder="Skriv din krypteret tekst her"></textarea></div>
+        <div class="basis-1/2"><textarea id="decryptTextfieldOutput" class="w-full h-32 p-5 bg-gray-100 resize-none" placeholder="Din tekst kommer her" disabled></textarea></div>
     </div>
 
     <div class="mt-10">
         <p class="text-center text-gray-300 text-sm">Udviklet af Lukas Mittun Alexander Guldstøv | s204174 & Maximilian Maria Olden-Jørgensen | s204178 til kursus 34229</p>
     </div>
     
+    <script>
+        let uri = "https://290172f0-e5fb-4404-a06b-9234e511aeee.mock.pstmn.io";
+ 
+
+        let req = (loaderId,ecryptTextfieldOutput,endpoint) => {
+            document.getElementById(loaderId).innerHTML = "Loading..."
+            fetch(
+                uri+endpoint, 
+                {
+                    method: 'GET',
+                    redirect: 'follow'
+                }
+            )
+            .then(response  => response.text())
+            .then(res       =>  {
+                setInput(ecryptTextfieldOutput,res)
+                document.getElementById(loaderId).innerHTML = ""
+            })
+            .catch(error    => console.log('error', error)) 
+        
+
+        }
+
+        let setInput = (input,res) => {
+            document.getElementById(input).value = res;
+        }
+
+        let encryptData = () => req("encryptLoader","ecryptTextfieldOutput","/hello")
+        let decryptData = () => req("decryptLoader","decryptTextfieldOutput","/hello2")
+
+        document.getElementById("encryptTextfieldInput").addEventListener("keydown",encryptData);
+        document.getElementById("decryptTextfieldInput").addEventListener("keydown",decryptData);
+         
+ 
+    </script>
 </body>
 </html>
