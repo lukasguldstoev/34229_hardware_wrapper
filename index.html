@@ -38,7 +38,7 @@
                       placeholder="Skriv din tekst her"></textarea>
         </div>
         <div class="basis-1/2">
-            <textarea id="ecryptTextfieldOutput" class="w-full h-32 p-5 bg-gray-100 resize-none" 
+            <textarea id="encryptTextfieldOutput" class="w-full h-32 p-5 bg-gray-100 resize-none" 
                       placeholder="Din krypteret tekst kommer her" disabled></textarea>
         </div>
     </div>
@@ -73,9 +73,10 @@
  
 
         let req = (loaderId,textField,endpoint) => {
-            
+
             document.getElementById(loaderId).innerHTML = ""
             if (document.getElementById(textField+"Input").value==""){
+                setInput(textField,"")
                 return
             }
             document.getElementById(loaderId).innerHTML = "Loading..."
@@ -95,8 +96,10 @@
             .catch(error => console.log('error', error)) 
         }
 
-        let setInput = (input,res) => {
-            document.getElementById(input+"Output").value = res;
+        let setInput = (textFieldOutput,res) => {
+            console.log(textFieldOutput+"Output")
+            console.log(res)
+            document.getElementById(textFieldOutput+"Output").value = res;
         }
 
         let encryptData = () => req("encryptLoader","encryptTextfield","/hello")
