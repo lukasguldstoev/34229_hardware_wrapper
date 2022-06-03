@@ -72,8 +72,14 @@
         let uri = "https://290172f0-e5fb-4404-a06b-9234e511aeee.mock.pstmn.io";
  
 
-        let req = (loaderId,ecryptTextfieldOutput,endpoint) => {
+        let req = (loaderId,textField,endpoint) => {
+            
+            document.getElementById(loaderId).innerHTML = ""
+            if (document.getElementById(textField+"Input").value==""){
+                return
+            }
             document.getElementById(loaderId).innerHTML = "Loading..."
+
             fetch(
                 uri+endpoint, 
                 {
@@ -81,25 +87,23 @@
                     redirect: 'follow'
                 }
             )
-            .then(response  => response.text())
-            .then(res       =>  {
-                setInput(ecryptTextfieldOutput,res)
+            .then(response => response.text())
+            .then(res =>  {
+                setInput(textField,res)
                 document.getElementById(loaderId).innerHTML = ""
             })
-            .catch(error    => console.log('error', error)) 
-        
-
+            .catch(error => console.log('error', error)) 
         }
 
         let setInput = (input,res) => {
-            document.getElementById(input).value = res;
+            document.getElementById(input+"Output").value = res;
         }
 
-        let encryptData = () => req("encryptLoader","ecryptTextfieldOutput","/hello")
-        let decryptData = () => req("decryptLoader","decryptTextfieldOutput","/hello2")
+        let encryptData = () => req("encryptLoader","encryptTextfield","/hello")
+        let decryptData = () => req("decryptLoader","decryptTextfield","/hello2")
 
-        document.getElementById("encryptTextfieldInput").addEventListener("keydown",encryptData);
-        document.getElementById("decryptTextfieldInput").addEventListener("keydown",decryptData);
+        document.getElementById("encryptTextfieldInput").addEventListener("keyup",encryptData);
+        document.getElementById("decryptTextfieldInput").addEventListener("keyup",decryptData);
          
  
     </script>
