@@ -4,40 +4,68 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>DTU | Encryption as a service</title>
     <script src="https://cdn.tailwindcss.com"></script>
- 
-
 </head>
 <body class="w-4/5 mx-auto my-10">
     
     <div class="flex">
-        <div class="mr-10"><img class="w-12" src="https://designguide.dtu.dk/-/media/subsites/designguide/design-basics/logo/dtu_logo_corporate_red_rgb.png"/></div>
+        <div class="mr-10">
+            <img class="w-12" 
+                    src="https://designguide.dtu.dk/-/media/subsites/designguide/design-basics/logo/dtu_logo_corporate_red_rgb.png"/>
+        </div>
         <div>
             <h2 class="font-bold text-3xl">Encryption as a service</h2>
             <p class="text-md text-gray-300"><i>Online encryption and decryption service</i></p>
         </div>
     </div>
 
+
     <div class="flex items-center mt-10 align-center justify-center">
         <div class=" pr-5"><b>Nøgle:</b></div>
         <input id="key" class="w-full" type="text" value="a5f6ba42255643907a5bb3709840ca5b"/>
     </div>
 
-    <p class="mt-10"><i>Kryptering:</i><span class="text-sm ml-2 text-gray-300" id="encryptLoader"></span></p>
+
+    <p class="mt-10">
+        <i>Kryptering:</i>
+        <span class="text-sm ml-2 text-gray-300" id="encryptLoader"></span>
+    </p>
+    
     <div class=" flex">
-        <div class="basis-1/2 "><textarea id="encryptTextfieldInput" class="w-full outline-0 h-32 p-5 bg-gray-50 resize-none" placeholder="Skriv din tekst her"></textarea></div>
-        <div class="basis-1/2"><textarea id="ecryptTextfieldOutput" class="w-full h-32 p-5 bg-gray-100 resize-none" placeholder="Din krypteret tekst kommer her" disabled></textarea></div>
+        <div class="basis-1/2 ">
+            <textarea id="encryptTextfieldInput" class="w-full outline-0 h-32 p-5 bg-gray-50 resize-none" 
+                      placeholder="Skriv din tekst her"></textarea>
+        </div>
+        <div class="basis-1/2">
+            <textarea id="ecryptTextfieldOutput" class="w-full h-32 p-5 bg-gray-100 resize-none" 
+                      placeholder="Din krypteret tekst kommer her" disabled></textarea>
+        </div>
     </div>
 
-    <p class="mt-10"><i>Dekryptering:</i><span class="text-sm ml-2 text-gray-300" id="decryptLoader"></span></p>
-    <div class=" flex">
-        <div class="basis-1/2 "><textarea id="decryptTextfieldInput" class="w-full outline-0 h-32 p-5 bg-gray-50 resize-none" placeholder="Skriv din krypteret tekst her"></textarea></div>
-        <div class="basis-1/2"><textarea id="decryptTextfieldOutput" class="w-full h-32 p-5 bg-gray-100 resize-none" placeholder="Din tekst kommer her" disabled></textarea></div>
+
+    <p class="mt-10">
+        <i>Dekryptering:</i>
+        <span class="text-sm ml-2 text-gray-300" id="decryptLoader"></span>
+    </p>
+    
+    <div class=" flex"> 
+        <div class="basis-1/2 ">
+            <textarea id="decryptTextfieldInput" class="w-full outline-0 h-32 p-5 bg-gray-50 resize-none" 
+                      placeholder="Skriv din krypteret tekst her"></textarea>
+        </div>
+        <div class="basis-1/2">
+            <textarea id="decryptTextfieldOutput" class="w-full h-32 p-5 bg-gray-100 resize-none" 
+                      placeholder="Din tekst kommer her" disabled></textarea>
+        </div>
     </div>
 
     <div class="mt-10">
-        <p class="text-center text-gray-300 text-sm">Udviklet af Lukas Mittun Alexander Guldstøv | s204174 & Maximilian Maria Olden-Jørgensen | s204178 til kursus 34229</p>
+        <p class="text-center text-gray-300 text-sm">
+            Developed by Lukas Mittun Alexander Guldstøv | 
+            s204174 & Maximilian Maria Olden-Jørgensen | 
+            s204178 for course 34229
+        </p>
     </div>
     
     <script>
