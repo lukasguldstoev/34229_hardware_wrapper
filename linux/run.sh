@@ -1,0 +1,2 @@
+sudo make
+./output/server

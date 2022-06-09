@@ -69,7 +69,8 @@
     </div>
     
     <script>
-        let uri = "https://290172f0-e5fb-4404-a06b-9234e511aeee.mock.pstmn.io";
+        let uri = "http://localhost:8000";
+       // let uri = "https://a2da6bc7-6dc5-4060-841e-da4caa456eb8.mock.pstmn.io";
  
 
         let req = (loaderId,textField,endpoint) => {
@@ -90,16 +91,29 @@
 
             document.getElementById(loaderId).innerHTML = "Loading..."
             
+            var details = {
+                'key': document.getElementById("key").value,
+                'text': document.getElementById(textField+"Input").value,
+            };
+
+            var formBody = [];
+            for (var property in details) {
+                var encodedKey = encodeURIComponent(property);
+                var encodedValue = encodeURIComponent(details[property]);
+                formBody.push(encodedKey + "=" + encodedValue);
+            }
+            formBody = formBody.join("&");
 
             fetch(
                 uri+endpoint, 
                 {
                     method: 'POST',
                     redirect: 'follow',
-                    body: JSON.stringify({
-                        key: document.getElementById("key").value, 
-                        text: document.getElementById(textField+"Input").value
-                    })
+                    mode:'no-cors',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formBody
                 }
             )
             .then(response => response.text())
@@ -111,7 +125,6 @@
         }
 
         let setInput = (textFieldOutput,res) => {
-            console.log(textFieldOutput+"Output")
             console.log(res)
             document.getElementById(textFieldOutput+"Output").value = res;
         }

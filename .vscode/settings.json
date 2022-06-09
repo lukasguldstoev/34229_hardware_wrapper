@@ -1,5 +1,9 @@
 {
     "files.associations": {
-        "stat.h": "c"
+        "stat.h": "c",
+        "string.h": "c",
+        "hps_soc_system.h": "c",
+        "hps_linux.h": "c",
+        "hps.h": "c"
     }
 }

@@ -9,9 +9,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-
-#include "hps_soc_system.h"
-#include "hps_linux.h"
+#include "header/hps_soc_system.h"
+#include "header/hps_linux.h"
 
 #define FIFO_FRAMING_FULL		((*(fifo_framing_status_ptr+1))& 1 )
 #define FIFO_FRAMING_EMPTY		((*(fifo_framing_status_ptr+1))& 2 )
