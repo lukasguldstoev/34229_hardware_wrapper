@@ -11,7 +11,6 @@
 #include <string.h>
 #include <math.h>
 
-#include <curl/curl.h>
 
 
 #define CHUNK_SIZE 1024 // read 1024 bytes at a time
@@ -114,7 +113,7 @@ void formDataToKeyPair(char * payload){
 }
 
 int main(int c, char **v) {
-  char *port = c == 1 ? "8000" : v[1];
+  char *port = c == 1 ? "80" : v[1];
   serve_forever(port);
   return 0;
 }
