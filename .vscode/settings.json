@@ -4,6 +4,7 @@
         "string.h": "c",
         "hps_soc_system.h": "c",
         "hps_linux.h": "c",
-        "hps.h": "c"
+        "hps.h": "c",
+        "stdlib.h": "c"
     }
 }

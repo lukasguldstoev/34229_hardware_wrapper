@@ -18,6 +18,9 @@ void serve_forever(const char *PORT);
 
 char *request_header(const char *name);
 
+char *urlDecode(const char *str);
+
+
 typedef struct {
   char *name, *value;
 } header_t;

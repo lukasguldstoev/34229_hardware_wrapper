@@ -4,10 +4,14 @@
 //#include "hps_linux.h"
 
 #include <sys/stat.h>
+#include <ctype.h>
+#include <stdlib.h>
 
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+
+#include <curl/curl.h>
 
 
 #define CHUNK_SIZE 1024 // read 1024 bytes at a time
@@ -33,6 +37,48 @@ struct pair {
 };
 
 struct pair pairs[4];
+
+
+char *urlDecode(const char *str) {
+  int d = 0; /* whether or not the string is decoded */
+
+  char *dStr = malloc(strlen(str) + 1);
+  char eStr[] = "00"; /* for a hex code */
+
+  strcpy(dStr, str);
+
+  while(!d) {
+    d = 1;
+    int i; /* the counter for the string */
+
+    for(i=0;i<strlen(dStr);++i) {
+
+      if(dStr[i] == '%') {
+        if(dStr[i+1] == 0)
+          return dStr;
+
+        if(isxdigit(dStr[i+1]) && isxdigit(dStr[i+2])) {
+
+          d = 0;
+
+          /* combine the next to numbers into one */
+          eStr[0] = dStr[i+1];
+          eStr[1] = dStr[i+2];
+
+          /* convert it to decimal */
+          long int x = strtol(eStr, NULL, 16);
+
+          /* remove the hex */
+          memmove(&dStr[i+1], &dStr[i+3], strlen(&dStr[i+3])+1);
+
+          dStr[i] = x;
+        }
+      }
+    }
+  }
+
+  return dStr;
+}
 
 void formDataToKeyPair(char * payload){
   // Extract the key-value pair
@@ -158,16 +204,16 @@ void route() {
     printf("ENCRYPT: %d bytes receieved.\n", payload_size);
 
     if (payload_size > 0){
-      printf("%s",payload);
+     
+      payload = urlDecode(payload);
       formDataToKeyPair(payload);
 
-      printf("size of structure %lu \n\n", sizeof(pairs));
+      printf("{key: %s", (pairs[0].key));
+      printf(", value: %s } \n", (pairs[0].value));
 
-      printf("Contents of key %s \n", (pairs[0].key));
-      printf("Contents of value %s \n\n", (pairs[0].value));
+      printf("{key: %s", (pairs[1].key));
+      printf(", value: %s } \n", (pairs[1].value));
 
-      printf("Contents of key %s \n", (pairs[1].key));
-      printf("Contents of value %s \n", (pairs[1].value));
     }
   }
 
@@ -176,14 +222,14 @@ void route() {
     printf("DECRYPT: %d bytes receieved.\n", payload_size);
 
     if (payload_size > 0)
-      printf("Request body: %s \n", payload);
+      payload = urlDecode(payload);
       formDataToKeyPair(payload);
 
-      printf("Contents of key %s \n", (pairs[0].key));
-      printf("Contents of value %s \n\n", (pairs[0].value));
+      printf("{key: %s", (pairs[0].key));
+      printf(", value: %s } \n", (pairs[0].value));
 
-      printf("Contents of key %s \n", (pairs[1].key));
-      printf("Contents of value %s \n", (pairs[1].value));
+      printf("{key: %s", (pairs[1].key));
+      printf(", value: %s } \n", (pairs[1].value));
 
       // handle above with HPS
 
