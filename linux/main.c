@@ -1,34 +1,57 @@
+#pragma region
+
+#define soc_cv_av
+#include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <unistd.h>
+
+#include "header/hps_soc_system.h"
+#include "header/hps_linux.h"
+
 #include "header/httpd.h"
-
-//#include "hps_soc_system.h"
-//#include "hps_linux.h"
-
 #include <sys/stat.h>
 #include <ctype.h>
-#include <stdlib.h>
-
 #include <stdio.h>
-#include <string.h>
 #include <math.h>
 
 
-
 #define CHUNK_SIZE 1024 // read 1024 bytes at a time
-
-// Public directory settings
 #define PUBLIC_DIR "./public"
 #define INDEX_HTML "/index.html"
 #define NOT_FOUND_HTML "/404.html"
+ 
+#define FIFO_FRAMING_FULL		((*(fifo_framing_status_ptr+1))& 1 )
+#define FIFO_FRAMING_EMPTY		((*(fifo_framing_status_ptr+1))& 2 )
+
+#define FIFO_FRAMING_FULL2		((*(fifo_fpga_hps_status_ptr+1))& 1 )
+#define FIFO_FRAMING_EMPTY2		((*(fifo_fpga_hps_status_ptr+1))& 2 )
+
+#define alt_write_word(dest, src)       (*ALT_CAST(volatile uint32_t *, (dest)) = (src))
+
+volatile unsigned short * fifo_framing_transmit_ptr = NULL;
+volatile unsigned int * fifo_framing_status_ptr = NULL;
+volatile unsigned short * fifo_fpga_hps_receive_ptr = NULL;
+volatile unsigned int * fifo_fpga_hps_status_ptr = NULL;
+volatile unsigned int * fpga_HEX0 = NULL;
+volatile unsigned int * fpga_leds = NULL;
+volatile unsigned int * fpga_switches = NULL;
+
 
 char 
     *token, 
     *key, 
     *value, 
     *p;
-
 char *array[3];
 char *list[7];
 int i, j = 0;
+int scanok;
+unsigned short N;
 
 struct pair {
   char *key;
@@ -36,6 +59,94 @@ struct pair {
 };
 
 struct pair pairs[4];
+
+#pragma endregion
+
+
+
+int main(int c, char **v) {
+  char *port = c == 1 ? "80" : v[1];
+
+  open_physical_memory_device();
+  mmap_fpga_peripherals();
+
+  serve_forever(port);
+  return 0;
+}
+
+
+void open_physical_memory_device() {
+    // We need to access the system's physical memory so we can map it to user
+    // space. We will use the /dev/mem file to do this. /dev/mem is a character
+    // device file that is an image of the main memory of the computer. Byte
+    // addresses in /dev/mem are interpreted as physical memory addresses.
+    // Remember that you need to execute this program as ROOT in order to have
+    // access to /dev/mem.
+
+    fd_dev_mem = open("/dev/mem", O_RDWR | O_SYNC);
+    if(fd_dev_mem  == -1) {
+        printf("ERROR: could not open \"/dev/mem\".\n");
+        printf("    errno = %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+}
+
+void close_physical_memory_device() {
+    close(fd_dev_mem);
+}
+
+void mmap_fpga_peripherals() {
+    h2f_lw_axi_master = mmap(NULL, h2f_lw_axi_master_span, PROT_READ | PROT_WRITE, MAP_SHARED, fd_dev_mem, h2f_lw_axi_master_ofst);
+    if (h2f_lw_axi_master == MAP_FAILED) {
+        printf("Error: h2f_lw_axi_master mmap() failed.\n");
+        printf("    errno = %s\n", strerror(errno));
+        close(fd_dev_mem);
+        exit(EXIT_FAILURE);
+    }
+	h2f_axi_master = mmap(NULL, h2f_axi_master_span, (PROT_READ | PROT_WRITE), MAP_SHARED, fd_dev_mem, h2f_axi_master_ofst);
+    if (h2f_axi_master == MAP_FAILED) {
+        printf("Error: h2f_lw_axi_master mmap() failed.\n");
+        printf("    errno = %s\n", strerror(errno));
+        close(fd_dev_mem);
+        exit(EXIT_FAILURE);
+    }
+
+	fifo_framing_transmit_ptr = (unsigned short *) (h2f_axi_master + FIFO_TX_VIDEO_IN_BASE);
+	fifo_framing_status_ptr = (unsigned int *)(h2f_lw_axi_master +  FIFO_TX_VIDEO_IN_CSR_BASE);
+
+	fifo_fpga_hps_receive_ptr = (unsigned short *) (h2f_lw_axi_master + FIFO_CONTROL_RX_OUT_BASE);
+	fifo_fpga_hps_status_ptr = (unsigned int *)(h2f_lw_axi_master +  FIFO_CONTROL_RX_OUT_CSR_BASE);
+	
+
+	fpga_leds =   (unsigned int *) (h2f_lw_axi_master +  HPS_FPGA_LEDS_BASE);
+	fpga_switches = h2f_lw_axi_master + HPS_FPGA_SWITCHES_BASE;
+	fpga_HEX0 = h2f_lw_axi_master + HPS_FPGA_HEX0_BASE;
+}
+
+void munmap_fpga_peripherals() {
+    if (munmap(h2f_lw_axi_master, h2f_lw_axi_master_span) != 0) {
+        printf("Error: h2f_lw_axi_master munmap() failed\n");
+        printf("    errno = %s\n", strerror(errno));
+        close(fd_dev_mem);
+        exit(EXIT_FAILURE);
+    }
+	if (munmap(h2f_axi_master, h2f_axi_master_span) != 0) {
+        printf("Error: h2f_lw_axi_master munmap() failed\n");
+        printf("    errno = %s\n", strerror(errno));
+        close(fd_dev_mem);
+        exit(EXIT_FAILURE);
+    }
+    h2f_lw_axi_master = NULL;
+	h2f_axi_master    = NULL;
+    fpga_leds         = NULL;
+	fpga_switches	  = NULL;
+	fifo_framing_transmit_ptr = NULL;
+	fifo_framing_status_ptr = NULL;
+	fifo_fpga_hps_receive_ptr = NULL;
+	fifo_fpga_hps_status_ptr = NULL;
+
+}
+
 
 
 char *urlDecode(const char *str) {
@@ -112,12 +223,6 @@ void formDataToKeyPair(char * payload){
       }
 }
 
-int main(int c, char **v) {
-  char *port = c == 1 ? "80" : v[1];
-  serve_forever(port);
-  return 0;
-}
-
 /**
  * @brief helper function
  * 
@@ -156,7 +261,6 @@ int read_file(const char *file_name) {
   }
   return err;
 }
-
 
 /**
  * @brief routing 
@@ -207,11 +311,17 @@ void route() {
       payload = urlDecode(payload);
       formDataToKeyPair(payload);
 
-      printf("{key: %s", (pairs[0].key));
-      printf(", value: %s } \n", (pairs[0].value));
+      printf("{key: %s, value: %s}\n", (pairs[0].key), (pairs[0].value));
+      printf("{key: %s, value: %s}\n", (pairs[1].key), (pairs[1].value));
 
-      printf("{key: %s", (pairs[1].key));
-      printf(", value: %s } \n", (pairs[1].value));
+      N=(unsigned short) 7;
+      printf("Writing %d to FIFO\n\n",N);
+      if (!FIFO_FRAMING_FULL) {* fifo_framing_transmit_ptr=N;};
+
+      while (FIFO_FRAMING_EMPTY2==0){
+        printf("\nRead: %i", *fifo_fpga_hps_receive_ptr);
+      }
+     // printf("\n\r Read: %i", *fifo_fpga_hps_receive_ptr);
 
     }
   }

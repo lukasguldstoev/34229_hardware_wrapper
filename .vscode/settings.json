@@ -6,5 +6,6 @@
         "hps_linux.h": "c",
         "hps.h": "c",
         "stdlib.h": "c"
-    }
+    },
+    "debug.allowBreakpointsEverywhere": true
 }
