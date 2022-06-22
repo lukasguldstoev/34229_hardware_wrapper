@@ -6,6 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DTU | Encryption as a service</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .decryptTextfieldInput,.encryptTextfieldInput{
+            transition:all 0.25s;
+        }
+        .decryptTextfieldInput:hover,.encryptTextfieldInput:hover{
+            transform:scale(1.05);
+        }
+    </style>
 </head>
 <body class="w-4/5 mx-auto my-10">
     
@@ -23,7 +31,9 @@
 
     <div class="flex items-center mt-10 align-center justify-center">
         <div class=" pr-5"><b>Nøgle:</b></div>
-        <input id="key" class="w-full" type="text" value="a5f6ba42255643907a5bb3709840ca5b"/>
+        <input maxlength="16" id="key" class="w-10/12 h-8" type="text" value="MHzRf3cBdIV9DWaS"/>
+        <button class="w-1/12 bg-sky-600 text-white  h-8 text-xs" id="setKey">Set key</button>
+        <button class="w-1/12 bg-slate-100 text-black h-8 text-xs" id="generateKey">generate key</button>
     </div>
 
 
@@ -36,6 +46,7 @@
         <div class="basis-1/2 ">
             <textarea id="encryptTextfieldInput" class="w-full outline-0 h-48 p-5 bg-gray-50 resize-none" 
                       placeholder="Skriv din tekst her"></textarea>
+            <div class="text-right"><button id="encryptBtn" class="hover:bg-sky-700 bg-sky-600 text-white p-2 relative text-sm">Encrypt</button></div>
         </div>
         <div class="basis-1/2">
             <textarea id="encryptTextfieldOutput" class="w-full h-48 p-5 bg-gray-100 resize-none" 
@@ -53,7 +64,7 @@
         <div class="basis-1/2 ">
             <textarea id="decryptTextfieldInput" class="w-full outline-0 h-48 p-5 bg-gray-50 resize-none" 
                       placeholder="Skriv din krypteret tekst her"></textarea>
-        </div>
+            <div class="text-right"><button id="decryptBtn" class="hover:bg-sky-700 bg-sky-600 text-white p-2 relative text-sm">Decrypt</button></div></div>
         <div class="basis-1/2">
             <textarea id="decryptTextfieldOutput" class="w-full h-48 p-5 bg-gray-100 resize-none" 
                       placeholder="Din tekst kommer her" disabled></textarea>
@@ -133,9 +144,82 @@
         let encryptData = () => req("encryptLoader","encryptTextfield","/aes/encrypt")
         let decryptData = () => req("decryptLoader","decryptTextfield","/aes/decrypt")
 
-        document.getElementById("encryptTextfieldInput").addEventListener("keyup",encryptData);
-        document.getElementById("decryptTextfieldInput").addEventListener("keyup",decryptData);
+        document.getElementById("encryptBtn").addEventListener("click",encryptData);
+        document.getElementById("decryptBtn").addEventListener("click",decryptData);
+
+
+        /**
+         * Generate or set key
+         */
+        let confirmKeyChange = (type,key="") => {
+            if (confirm('Vil du ændre krypteringsnøglen?')){
+                if (type!="setKey"){
+                    let newKey =generateKey()
+                    document.getElementById("key").value = generateKey();   
+                    // send key from input to backend
+                    setKey(newKey)
+                }
+                else {
+                    // send key from input to backend
+                    setKey(document.getElementById("key").value);
+                }
+            }
+        }
+
+        let generateKey = () => {
+            // generate a random key
+            let key = "";
+            let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            for (var i = 0; i < 16; i++)
+                key += possible.charAt(Math.floor(Math.random() * possible.length));
+            return key;
+
+        }
+
+        let setNewKey = () => confirmKeyChange("setKey","");
+        let setKey = (key) => {
+            console.log("somerequest")
+
+            if (key.length!=16){
+                alert("nøgle skal være 16 karaktere");
+                return;
+            }
+
+            var details = {
+                "key": document.getElementById("key").value
+            };
+
+            var formBody = [];
+            for (var property in details) {
+                var encodedKey = encodeURIComponent(property);
+                var encodedValue = encodeURIComponent(details[property]);
+                formBody.push(encodedKey + "=" + encodedValue);
+            }
+            formBody = formBody.join("&");
+
+
+            fetch(
+                uri+"/aes/key", 
+                {
+                    method: 'POST',
+                    redirect: 'follow',
+                    mode:'no-cors',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formBody
+                }
+            )
+            .then(response => response.text())
+            .then(res =>  {
+                alert("Ny nøgle sat");
+            })
+            .catch(error => console.log('error', error)) 
+            
+        }
          
+        document.getElementById("setKey").addEventListener("click",setNewKey);
+        document.getElementById("generateKey").addEventListener("click",confirmKeyChange);
  
     </script>
 </body>

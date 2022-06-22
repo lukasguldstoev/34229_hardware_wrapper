@@ -11,9 +11,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define MAX_CONNECTIONS 1000
+#define MAX_CONNECTIONS 5
 #define BUF_SIZE 65535
-#define QUEUE_SIZE 1000000
+#define QUEUE_SIZE 100
 
 static int listenfd;
 int *clients;

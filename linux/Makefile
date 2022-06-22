@@ -6,8 +6,8 @@ clean:
 	rm -rf output/server
 	rm -f output/reference.o
 
-output/reference.o: hps_linux.c header/hps_linux.h
-	$(CC) -c -o output/reference.o hps_linux.c
+#output/reference.o: hps_linux.c header/hps_linux.h
+#	$(CC) -c -o output/reference.o hps_linux.c
 
 output/server: output/main.o output/httpd.o
 	$(CC) -o output/server $^

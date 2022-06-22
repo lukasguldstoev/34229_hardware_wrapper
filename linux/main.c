@@ -20,6 +20,9 @@
 #include <math.h>
 
 
+#include <time.h>
+
+
 #define CHUNK_SIZE 1024 // read 1024 bytes at a time
 #define PUBLIC_DIR "./public"
 #define INDEX_HTML "/index.html"
@@ -41,6 +44,7 @@ volatile unsigned int * fpga_HEX0 = NULL;
 volatile unsigned int * fpga_leds = NULL;
 volatile unsigned int * fpga_switches = NULL;
 
+      struct timespec tstart={0,0}, tend={0,0};
 
 char 
     *token, 
@@ -49,7 +53,7 @@ char
     *p;
 char *array[3];
 char *list[7];
-int i, j = 0;
+int i, j ,k= 0;
 int scanok;
 unsigned short N;
 
@@ -262,6 +266,31 @@ int read_file(const char *file_name) {
   return err;
 }
 
+
+
+int hexToDec(char  hex){
+    int decimal = 0;
+    int i = 0;
+
+    if(hex >= '0' && hex <= '9')
+    {
+        decimal += (hex - 48);
+    }
+    else if(hex >= 'A' && hex <= 'F')
+    {
+        decimal += (hex - 55);
+    }
+    else if(hex >= 'a' && hex <= 'f')
+    {
+        decimal += (hex - 87);
+    }
+    
+
+    return decimal;
+}
+
+
+
 /**
  * @brief routing 
  * 
@@ -284,6 +313,29 @@ void route() {
       printf("Hello! You are using %s\n\n", request_header("User-Agent"));
     }
   }
+  
+  POST("/aes/key") {
+    HTTP_201;
+    printf("some keeeey\n");
+    * fifo_framing_transmit_ptr = 1;
+   
+    payload = urlDecode(payload);
+    formDataToKeyPair(payload);
+
+    printf("%s",pairs[0].value);
+ i = 0;
+    j = 0;
+
+    while (pairs[0].value[i+1]!=0){
+      if (!FIFO_FRAMING_FULL) {
+        * fifo_framing_transmit_ptr = (pairs[0].value[i] << 8) + pairs[0].value[i+1];
+        printf("Writing  two bytes %i to FIFO (%i, %i)\n",(pairs[0].value[i] << 8) + pairs[0].value[i+1], pairs[0].value[i], pairs[0].value[i+1]);
+      
+      i=i+2;
+      j++;
+      }
+    }
+  }
 
   /**
    * @brief 
@@ -299,48 +351,173 @@ void route() {
       printf("%s: %s\n", h->name, h->value);
       h++;
     }
-  }
-   */
-
+  }  */
   POST("/aes/encrypt") {
     HTTP_201;
-    printf("ENCRYPT: %d bytes receieved.\n", payload_size);
+  //  printf("ENCRYPT: %d bytes receieved.\n", payload_size);
 
+      /**
+      
+       1234567890123456
+       key value: start with
+       
+       */
     if (payload_size > 0){
-     
+
+    // benchmark code start
+     // clock_gettime(CLOCK_MONOTONIC, &tstart);
+    // benchmark code end
+
       payload = urlDecode(payload);
       formDataToKeyPair(payload);
 
-      printf("{key: %s, value: %s}\n", (pairs[0].key), (pairs[0].value));
-      printf("{key: %s, value: %s}\n", (pairs[1].key), (pairs[1].value));
+    //  printf("{key: %s, value: %s}\n", (pairs[0].key), (pairs[0].value));
+    //  printf("{key: %s, value: %s}\n", (pairs[1].key), (pairs[1].value));
 
-      N=(unsigned short) 7;
-      printf("Writing %d to FIFO\n\n",N);
-      if (!FIFO_FRAMING_FULL) {* fifo_framing_transmit_ptr=N;};
-
-      while (FIFO_FRAMING_EMPTY2==0){
-        printf("\nRead: %i", *fifo_fpga_hps_receive_ptr);
+      int arrayLength = 0;
+      while (pairs[1].value[arrayLength]!=NULL){
+        arrayLength++;
       }
-     // printf("\n\r Read: %i", *fifo_fpga_hps_receive_ptr);
+ 
+      * fifo_framing_transmit_ptr = 2;
+ 
+      i = 0;
+      j = 0;
+      while (pairs[1].value[i+1]!=0){
+        if (!FIFO_FRAMING_FULL) {
+          * fifo_framing_transmit_ptr = (pairs[1].value[i] << 8) + pairs[1].value[i+1];
+       //   printf("%i",(pairs[1].value[i] << 8) + pairs[1].value[i+1]);
+        j++;
+        i=i+2;
+        }
+
+        if (FIFO_FRAMING_FULL2 == 1){
+          while (FIFO_FRAMING_EMPTY2==0){
+            printf("%04x", *fifo_fpga_hps_receive_ptr);
+            j--;
+          }
+        }
+
+      }
+
+      // if value is not equal 2 bytes, then write the last byte
+      while (arrayLength%2==1){
+        if (!FIFO_FRAMING_FULL) {
+          * fifo_framing_transmit_ptr = (pairs[1].value[i] << 8);
+         // printf("%i",(pairs[1].value[i] << 8));
+        j++;
+        break;
+        }
+      }
+
+      // send null value if value is not equal to 8 bytes
+      while (j%8!=0){
+        if (!FIFO_FRAMING_FULL) {
+          * fifo_framing_transmit_ptr = 0;
+      //    printf("%i",0);
+        j++;
+
+        }
+      }
+
+
+      while (j!=0){
+        while (FIFO_FRAMING_EMPTY2==2){} // wait until FIFO is not empty
+        while (FIFO_FRAMING_EMPTY2==0){
+          printf("%04x", *fifo_fpga_hps_receive_ptr);
+          j--;
+        }
+      }
+ 
+    // benchmark code start
+    //clock_gettime(CLOCK_MONOTONIC, &tend);
+   // printf("\n%.5f seconds\n", ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) -   ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec));
+    // benchmark code end
 
     }
   }
 
   POST("/aes/decrypt") {
     HTTP_201;
-    printf("DECRYPT: %d bytes receieved.\n", payload_size);
+   // printf("DECRYPT: %d bytes receieved.\n", payload_size);
 
     if (payload_size > 0)
+
+    // benchmark code start
+     // clock_gettime(CLOCK_MONOTONIC, &tstart);
+    // benchmark code end
+
+
       payload = urlDecode(payload);
       formDataToKeyPair(payload);
+ 
+      * fifo_framing_transmit_ptr = 3;
+ 
+      i = 0;
+      j = 0;
 
-      printf("{key: %s", (pairs[0].key));
-      printf(", value: %s } \n", (pairs[0].value));
+      long pairA = 0;
+      long pairB = 0;
+      char * s;
 
-      printf("{key: %s", (pairs[1].key));
-      printf(", value: %s } \n", (pairs[1].value));
+    //  printf("before loop\n\n");
 
-      // handle above with HPS
+ 
+      while (pairs[1].value[i+3]!=0){
+      
+        if (!FIFO_FRAMING_FULL) {
+          
+          pairA = hexToDec(pairs[1].value[i]) * 16 + hexToDec(pairs[1].value[i+1]);
+          pairB = hexToDec(pairs[1].value[i+2]) * 16 + hexToDec(pairs[1].value[i+3]);
+
+          * fifo_framing_transmit_ptr = (pairA << 8) + pairB;
+       //   printf("%i %ld %ld\n",i,pairA,pairB);
+          j++;
+
+          if (pairs[1].value[i+4]==0){
+            break;
+          }
+          i=i+4;
+        }
+
+
+        if (FIFO_FRAMING_FULL2 == 1){
+          unsigned short newValue;
+          while (FIFO_FRAMING_EMPTY2==0){
+            newValue = *fifo_fpga_hps_receive_ptr;
+            printf("%c%c", ((char *) (newValue >> 8)), ((char *) (newValue & 0xFF)));
+            j--;
+          }
+        }
+
+      }
+
+
+      // send null value if value is not equal to 8 bytes
+      while (j%8!=0){
+        if (!FIFO_FRAMING_FULL) {
+          * fifo_framing_transmit_ptr = 0;
+      //    printf("%i",0);
+        j++;
+
+        }
+      }
+ 
+      while (j != 0){
+        while (FIFO_FRAMING_EMPTY2==2){} 
+        unsigned short newValue;
+        while (FIFO_FRAMING_EMPTY2==0){
+          newValue = *fifo_fpga_hps_receive_ptr;
+          printf("%c%c", ((char *) (newValue >> 8)), ((char *) (newValue & 0xFF)));
+          j--;
+        }
+      }
+
+
+    // benchmark code start
+    // clock_gettime(CLOCK_MONOTONIC, &tend);
+    //printf("\n%.5f seconds\n", ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) -  ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec));
+    // benchmark code end
 
   }
 
